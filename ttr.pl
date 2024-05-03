@@ -6,4 +6,7 @@ create([L=V:list(_)|TypeTail], [L=V|WitnessTail]) :-
     create(TypeTail, WitnessTail).
 
 has_type(Witness, Type) :-
-    create(Type, Witness).
+    create(Type, Witness),
+    !.
+
+has_type(_, type). % too general??
