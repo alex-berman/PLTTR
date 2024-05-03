@@ -6,6 +6,21 @@ function([agenda=[]:list(rec_type)],
 function([agenda=[[e:pick_up(a, c)]]:list(rec_type)],
 	 function([e:pick_up(a, c)],
 		  [agenda=[[e:attract_attention(a, b)]]:list(rec_type)])).
+function([agenda=[[e:attract_attention(a, b)]]:list(rec_type)],
+	 function([e:attract_attention(a, b)],
+		  [agenda=[[e:throw(a, c)]]:list(rec_type)])).
+function([agenda=[[e:throw(a, c)]]:list(rec_type)],
+	 function([e:throw(a, c)],
+		  [agenda=[[e:run_after(b, c)]]:list(rec_type)])).
+function([agenda=[[e:run_after(b, c)]]:list(rec_type)],
+	 function([e:run_after(b, c)],
+		  [agenda=[[e:pick_up(b, c)]]:list(rec_type)])).
+function([agenda=[[e:pick_up(b, c)]]:list(rec_type)],
+	 function([e:pick_up(b, c)],
+		  [agenda=[[e:return(b,c,a)]]:list(rec_type)])).
+function([agenda=[[e:return(b, c, a)]]:list(rec_type)],
+	 function([e:return(b, c, a)],
+		  [agenda=[]:list(rec_type)])).
 
 % Corresponds to Cooper (2023, p. 61), 54
 e(E, S) :-
