@@ -38,64 +38,54 @@ r(_{h: h1,
     s: s1}).
 
 
-% action_rule(+Agent, -Preconds, -Effects)
+% action_rule(+Agent, -Precondition, -Effect)
+% Unify an action rule's precondition and effect for a given agent.
 
 % Corresponds to Cooper (2023, p. 61), 54
 action_rule(
 	A,
-	[ \+ current_event(A, _),
+	( \+ current_event(A, _),
 	  states(A, [S|_]),
 	  S = [agenda=[Fst|_]]
-	],
-	[ create_event_in_world(Fst) ]).
+	),
+	create_event_in_world(Fst)
+    ).
 
 % Corresponds to Cooper (2023, p. 61), 55a
 action_rule(
 	A,
-	[ states(A, [S_prev|_]),
+	( states(A, [S_prev|_]),
 	  r(R),
 	  update_function(R, fun(T_prev, fun(EventType, T))),
 	  has_type(S_prev, T_prev),
 	  current_event(A, E),
 	  has_type(E, EventType)
-	],
-	[ has_type(S, T),
+	),
+	( has_type(S, T),
 	  retract(states(A, [S_prev|S_tail])),
 	  assert(states(A, [S, S_prev|S_tail])),
 	  retract(current_event(A, E))
-	]).
+	)
+    ).
 
 % Corresponds to Cooper (2023, p. 61), 55b
 action_rule(
 	A,
-	[ states(A, [S_prev|_]),
+	( states(A, [S_prev|_]),
 	  r(R),
 	  update_function(R, fun(T_prev, T)),
 	  T \= fun(_, _),
 	  has_type(S_prev, T_prev)
-	],
-	[ has_type(S, T),
+	),
+	( has_type(S, T),
 	  retract(states(A, [S_prev|S_tail])),
 	  assert(states(A, [S, S_prev|S_tail]))
-	]).
+	)).
 
 
 update_state(A) :-
-    forall(action_rule(A, Preconds, Effects),
-	   ( test_preconds(Preconds) ->
-		 apply_effects(Effects)
-	    ; true )).
-
-
-test_preconds([]).
-test_preconds([P|Ps]) :-
-    P,
-    test_preconds(Ps).
-
-apply_effects([]).
-apply_effects([E|Es]) :-
-    E,
-    apply_effects(Es).
+    forall(action_rule(A, Precondition, Effect),
+	   ( Precondition -> Effect ; true )).
 
 
 agent(0).
