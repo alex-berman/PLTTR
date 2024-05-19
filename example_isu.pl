@@ -1,5 +1,5 @@
 :- use_module(ttr).
-:- dynamic current_event/2, states/2.
+:- dynamic current_perceived_object/2, state/2, pending_perception/2, pending_action/2.
 
 
 % Game of fetch, corresponding to Cooper (2023, p.60)
@@ -38,100 +38,137 @@ r(_{h: h1,
     s: s1}).
 
 
-% action_rule(+Agent, -Precondition, -Effect)
+% action_rule(+Name, +Agent, -Precondition, -Effect)
 % Unify an action rule's precondition and effect for a given agent.
 
 % Corresponds to Cooper (2023, p. 61), 54
 action_rule(
-	A,
-	( \+ current_event(A, _),
-	  states(A, [S|_]),
+	eventCreation,
+	Agent,
+	( \+ current_perceived_object(Agent, _),
+	  state(Agent, [S|_]),
 	  S = [agenda=[Fst|_]]
 	),
-	create_event_in_world(Fst)
+	assert(pending_action(Agent, create(Fst)))
     ).
 
 % Corresponds to Cooper (2023, p. 61), 55a
 action_rule(
-	A,
-	( states(A, [S_prev|_]),
+	eventBasedUpdate,
+	Agent,
+	( state(Agent, [S_prev|_]),
 	  r(R),
 	  update_function(R, fun(T_prev, fun(EventType, T))),
 	  has_type(S_prev, T_prev),
-	  current_event(A, E),
-	  has_type(E, EventType)
+	  current_perceived_object(Agent, Event),
+	  has_type(Event, EventType)
 	),
 	( has_type(S, T),
-	  retract(states(A, [S_prev|S_tail])),
-	  assert(states(A, [S, S_prev|S_tail])),
-	  retract(current_event(A, E))
+	  retract(state(Agent, [S_prev|S_tail])),
+	  assert(state(Agent, [S, S_prev|S_tail]))
 	)
     ).
 
 % Corresponds to Cooper (2023, p. 61), 55b
 action_rule(
-	A,
-	( states(A, [S_prev|_]),
+	tacitUpdate,
+	Agent,
+	( state(Agent, [S_prev|_]),
 	  r(R),
 	  update_function(R, fun(T_prev, T)),
 	  T \= fun(_, _),
 	  has_type(S_prev, T_prev)
 	),
 	( has_type(S, T),
-	  retract(states(A, [S_prev|S_tail])),
-	  assert(states(A, [S, S_prev|S_tail]))
+	  retract(state(Agent, [S_prev|S_tail])),
+	  assert(state(Agent, [S, S_prev|S_tail]))
 	)).
 
 
-update_state(A) :-
-    forall(action_rule(A, Precondition, Effect),
-	   ( Precondition -> Effect ; true )).
+update_state(Agent) :-
+    forall(retract(pending_perception(Agent, Object)),
+	   ( assert(current_perceived_object(Agent, Object)),
+	     apply_rules(Agent),
+	     retract(current_perceived_object(Agent, Object))
+	   )),
+    apply_rules(Agent).
+
+
+apply_rules(Agent) :-
+    write('  current perceived object: '),
+    ( current_perceived_object(Agent, Object) ->
+	  write(Object) ;
+      write(none) ), nl,
+    forall(action_rule(RuleName, Agent, Precondition, Effect),
+	   ( Precondition ->
+		 ( write('  applying '), write(RuleName), nl,
+		   Effect,
+		   print_agent_internals(Agent)
+		 )
+	    ; true )).
+
+
+perceive(Agent, Object) :-
+    assert(pending_perception(Agent, Object)).
 
 
 agent(0).
 agent(1).
 
 
+handle_action(create(Type)) :-
+    create_event_in_world(Type).
+
+
 create_event_in_world(Type) :-
-    % We assume that when a event is created in the world, all agents immediately perceive it.
-    create(Type, E),
-    forall(agent(A), (
-	       retractall(current_event(A, _)),
-	       assert(current_event(A, E))
-	   )).
+    % We assume that any event can be created at any time, regardless of the state of the world. We also assume that
+    % when a event is created in the world, all agents immediately perceive it.
+    create(Type, Event),
+    forall(agent(Agent), perceive(Agent, Event)).
 
 
-print_agent_internals :-
-    forall(agent(A), (
-	       write('agent '), write(A), nl,
-	       write('  current state: '),
-	       states(A, [S|_]),
-	       write(S), nl,
-	       write('  current event: '),
-	       ( current_event(A, E) ->
-		     write(E)
-		; write('none')
-	       ), nl,
-	       write('----------------------------------------------------------------------'), nl, nl
-	   )).
+
+print_agent_header(A) :-
+    write('agent '), write(A), nl.
 
 
-repeat(0, _).
-repeat(N, Goal) :-
-    N > 0,
-    call(Goal),
-    N_minus_1 is N - 1,
-    repeat(N_minus_1, Goal).
+print_agent_internals(Agent) :-
+    write('  state: '),
+    state(Agent, [S|Tail]),
+    ( Tail = [] -> true ; write('..., ') ),
+    write(S),
+    nl,
+    findall(Action, pending_action(Agent, Action), PendingActions),
+    write('  pending actions: '), write(PendingActions), nl.
+
+
+clear_dynamic_facts :-
+    retractall(current_perceived_object(_, _)),
+    retractall(state(_, _)),
+    retractall(pending_perception(_, _)),
+    retractall(pending_action(_, _)).
 
 
 main :-
-    retractall(current_event(_, _)),
-    retractall(states(_, _)),
-    forall(agent(A),
-	   assert(states(A, [[agenda=[]]]))),
-    print_agent_internals,
-    repeat(20, (
-	       forall(agent(A),
-		      update_state(A)),
-	       print_agent_internals
-	   )).
+    clear_dynamic_facts,
+    forall(agent(Agent), assert(state(Agent, [[agenda=[]]]))),
+    process_time_steps(0, 20).
+
+
+process_time_steps(T, MaxT) :-
+    forall(agent(Agent),
+	   ( print_agent_header(Agent),
+	     ( T = 0 -> print_agent_internals(Agent) ; true ),
+	     update_state(Agent),
+	     forall(retract(pending_action(Agent, Action)),
+		    handle_action(Action))
+	   )),
+    write('----------------------------------------------------------------------'), nl, nl,
+    ( T < MaxT ->
+	  T1 is T + 1,
+	  process_time_steps(T1, MaxT)
+     ; true ).
+
+
+
+		      
