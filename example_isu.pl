@@ -3,6 +3,8 @@
 
 
 % Game of fetch, corresponding to Cooper (2023, p.60)
+
+% R is a dict containing role assignments for h (human), d (dog), and s (stick).
 update_function(
 	R, fun([agenda=[]:list(rec_type)],
 	       [agenda=[[e:pick_up(R.h, R.s)]]:list(rec_type)])).
@@ -32,10 +34,9 @@ update_function(
 		   [agenda=[]:list(rec_type)]))).
 
 
-% A dict containing individuals in the roles of human, dog and stick
-r(_{h: h1,
-    d: d1,
-    s: s1}).
+roles(_{h: h1,
+	d: d1,
+	s: s1}).
 
 
 % action_rule(+Name, +Agent, -Precondition, -Effect)
@@ -57,7 +58,7 @@ action_rule(
 	eventBasedUpdate,
 	Agent,
 	( state(Agent, [S_prev|_]),
-	  r(R),
+	  roles(R),
 	  update_function(R, fun(T_prev, fun(EventType, T))),
 	  has_type(S_prev, T_prev),
 	  current_perceived_object(Agent, Event),
@@ -74,7 +75,7 @@ action_rule(
 	tacitUpdate,
 	Agent,
 	( state(Agent, [S_prev|_]),
-	  r(R),
+	  roles(R),
 	  update_function(R, fun(T_prev, T)),
 	  T \= fun(_, _),
 	  has_type(S_prev, T_prev)
