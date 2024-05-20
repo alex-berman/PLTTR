@@ -6,31 +6,31 @@
 
 % R is a dict containing role assignments for h (human), d (dog), and s (stick).
 update_function(
-	R, fun([agenda=[]:list(rec_type)],
+	R, fun(_, [agenda=[]:list(rec_type)],
 	       [agenda=[[e:pick_up(R.h, R.s)]]:list(rec_type)])).
 update_function(
-	R, fun([agenda=[[e:pick_up(R.h, R.s)]]:list(rec_type)],
-	       fun([e:pick_up(R.h, R.s)],
+	R, fun(_, [agenda=[[e:pick_up(R.h, R.s)]]:list(rec_type)],
+	       fun(_, [e:pick_up(R.h, R.s)],
 		   [agenda=[[e:attract_attention(R.h, R.d)]]:list(rec_type)]))).
 update_function(
-	R, fun([agenda=[[e:attract_attention(R.h, R.d)]]:list(rec_type)],
-	       fun([e:attract_attention(R.h, R.d)],
+	R, fun(_, [agenda=[[e:attract_attention(R.h, R.d)]]:list(rec_type)],
+	       fun(_, [e:attract_attention(R.h, R.d)],
 		   [agenda=[[e:throw(R.h, R.s)]]:list(rec_type)]))).
 update_function(
-	R, fun([agenda=[[e:throw(R.h, R.s)]]:list(rec_type)],
-	       fun([e:throw(R.h, R.s)],
+	R, fun(_, [agenda=[[e:throw(R.h, R.s)]]:list(rec_type)],
+	       fun(_, [e:throw(R.h, R.s)],
 		   [agenda=[[e:run_after(R.d, R.s)]]:list(rec_type)]))).
 update_function(
-	R, fun([agenda=[[e:run_after(R.d, R.s)]]:list(rec_type)],
-	       fun([e:run_after(R.d, R.s)],
+	R, fun(_, [agenda=[[e:run_after(R.d, R.s)]]:list(rec_type)],
+	       fun(_, [e:run_after(R.d, R.s)],
 		   [agenda=[[e:pick_up(R.d, R.s)]]:list(rec_type)]))).
 update_function(
-	R, fun([agenda=[[e:pick_up(R.d, R.s)]]:list(rec_type)],
-	       fun([e:pick_up(R.d, R.s)],
+	R, fun(_, [agenda=[[e:pick_up(R.d, R.s)]]:list(rec_type)],
+	       fun(_, [e:pick_up(R.d, R.s)],
 		   [agenda=[[e:return(R.d, R.s, R.h)]]:list(rec_type)]))).
 update_function(
-	R, fun([agenda=[[e:return(R.d, R.s, R.h)]]:list(rec_type)],
-	       fun([e:return(R.d, R.s, R.h)],
+	R, fun(_, [agenda=[[e:return(R.d, R.s, R.h)]]:list(rec_type)],
+	       fun(_, [e:return(R.d, R.s, R.h)],
 		   [agenda=[]:list(rec_type)]))).
 
 
@@ -60,7 +60,8 @@ action_rule(
 	Agent,
 	( state(Agent, [T_prev|_]),
 	  roles(R),
-	  update_function(R, fun(T_prev, fun(EventType, T))),
+	  has_type(S_prev, T_prev),
+	  update_function(R, fun(S_prev, T_prev, fun(Event, EventType, T))),
 	  current_perceived_object(Agent, Event),
 	  has_type(Event, EventType)
 	),
@@ -75,8 +76,8 @@ action_rule(
 	Agent,
 	( state(Agent, [T_prev|_]),
 	  roles(R),
-	  update_function(R, fun(T_prev, T)),
-	  T \= fun(_, _)
+	  update_function(R, fun(_, T_prev, T)),
+	  T \= fun(_, _, _)
 	),
 	( retract(state(Agent, [T_prev|T_tail])),
 	  assert(state(Agent, [T, T_prev|T_tail]))
