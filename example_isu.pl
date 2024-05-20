@@ -42,13 +42,14 @@ roles(_{h: h1,
 % action_rule(+Name, +Agent, -Precondition, -Effect)
 % Unify an action rule's precondition and effect for a given agent.
 
-% Corresponds to Cooper (2023, p. 61), 54
+% Corresponds to Cooper (2023, p. 61), 54, but with the difference that the creation act uses the information state
+% type rather than the state as such. (s_{i,A} : T   T=[agenda:...] ~ : T.agenda.fst!)
 action_rule(
 	eventCreation,
 	Agent,
 	( \+ current_perceived_object(Agent, _),
-	  state(Agent, [S|_]),
-	  S = [agenda=[Fst|_]]
+	  state(Agent, [T|_]),
+	  T = [agenda=[Fst|_]:list(rec_type)]
 	),
 	assert(pending_action(Agent, create(Fst)))
     ).
@@ -57,16 +58,14 @@ action_rule(
 action_rule(
 	eventBasedUpdate,
 	Agent,
-	( state(Agent, [S_prev|_]),
+	( state(Agent, [T_prev|_]),
 	  roles(R),
 	  update_function(R, fun(T_prev, fun(EventType, T))),
-	  has_type(S_prev, T_prev),
 	  current_perceived_object(Agent, Event),
 	  has_type(Event, EventType)
 	),
-	( has_type(S, T),
-	  retract(state(Agent, [S_prev|S_tail])),
-	  assert(state(Agent, [S, S_prev|S_tail]))
+	( retract(state(Agent, [T_prev|S_tail])),
+	  assert(state(Agent, [T, T_prev|S_tail]))
 	)
     ).
 
@@ -74,15 +73,13 @@ action_rule(
 action_rule(
 	tacitUpdate,
 	Agent,
-	( state(Agent, [S_prev|_]),
+	( state(Agent, [T_prev|_]),
 	  roles(R),
 	  update_function(R, fun(T_prev, T)),
-	  T \= fun(_, _),
-	  has_type(S_prev, T_prev)
+	  T \= fun(_, _)
 	),
-	( has_type(S, T),
-	  retract(state(Agent, [S_prev|S_tail])),
-	  assert(state(Agent, [S, S_prev|S_tail]))
+	( retract(state(Agent, [T_prev|T_tail])),
+	  assert(state(Agent, [T, T_prev|T_tail]))
 	)).
 
 
@@ -150,9 +147,13 @@ clear_dynamic_facts :-
     retractall(pending_action(_, _)).
 
 
+initial_state_type([agenda=[]:list(rec_type)]).
+
+
 main :-
     clear_dynamic_facts,
-    forall(agent(Agent), assert(state(Agent, [[agenda=[]]]))),
+    initial_state_type(T0),
+    forall(agent(Agent), assert(state(Agent, [T0]))),
     process_time_steps(0, 20).
 
 

@@ -2,7 +2,7 @@
 
 % create(?Type, ?Witness)
 create([], []).
-create([L=V:list(_)|TypeTail], [L=V|WitnessTail]) :- % Manifest field (?)
+create([L=V:list(_)|TypeTail], [L=V|WitnessTail]) :-
     create(TypeTail, WitnessTail).
 create([L:V|TypeTail], [L=V|WitnessTail]) :-
     create(TypeTail, WitnessTail).
