@@ -1,5 +1,5 @@
 :- use_module(ttr).
-:- dynamic current_perceived_object/2, state/2, pending_perception/2, pending_action/2.
+:- dynamic current_perceived_object/2, state/2, pending_perception/2, pending_action/2, fun/3.
 
 
 % Game of fetch, corresponding to Cooper (2023, p.60)
@@ -59,9 +59,8 @@ action_rule(
 	eventBasedUpdate,
 	Agent,
 	( state(Agent, [T_prev|_]),
-	  roles(R),
 	  has_type(S_prev, T_prev),
-	  update_function(R, fun(S_prev, T_prev, fun(Event, EventType, T))),
+	  fun(S_prev, T_prev, fun(Event, EventType, T)),
 	  current_perceived_object(Agent, Event),
 	  has_type(Event, EventType)
 	),
@@ -75,8 +74,7 @@ action_rule(
 	tacitUpdate,
 	Agent,
 	( state(Agent, [T_prev|_]),
-	  roles(R),
-	  update_function(R, fun(_, T_prev, T)),
+	  fun(_, T_prev, T),
 	  T \= fun(_, _, _)
 	),
 	( retract(state(Agent, [T_prev|T_tail])),
@@ -111,8 +109,8 @@ perceive(Agent, Object) :-
     assert(pending_perception(Agent, Object)).
 
 
-agent(0).
-agent(1).
+agent(h).
+agent(d).
 
 
 handle_action(create(Type)) :-
@@ -142,10 +140,17 @@ print_agent_internals(Agent) :-
 
 
 clear_dynamic_facts :-
+    retractall(fun(_, _, _)),
     retractall(current_perceived_object(_, _)),
     retractall(state(_, _)),
     retractall(pending_perception(_, _)),
     retractall(pending_action(_, _)).
+
+
+initialize_functions :-
+    roles(R),
+    forall(update_function(R, fun(Var, VarType, Body)),
+	   assert(fun(Var, VarType, Body))).
 
 
 initial_state_type([agenda=[]:list(rec_type)]).
@@ -153,6 +158,7 @@ initial_state_type([agenda=[]:list(rec_type)]).
 
 main :-
     clear_dynamic_facts,
+    initialize_functions,
     initial_state_type(T0),
     forall(agent(Agent), assert(state(Agent, [T0]))),
     process_time_steps(0, 20).
@@ -171,7 +177,3 @@ process_time_steps(T, MaxT) :-
 	  T1 is T + 1,
 	  process_time_steps(T1, MaxT)
      ; true ).
-
-
-
-		      
