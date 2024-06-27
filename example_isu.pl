@@ -6,32 +6,32 @@
 
 % R is a dict containing role assignments for h (human), d (dog), and s (stick).
 update_function(
-	R, fun(_, [agenda=[]:list(rec_type)],
-	       [agenda=[[e:pick_up(R.h, R.s)]]:list(rec_type)])).
+	R, fun(_, rectype([agenda=[]:list(rectype(_))]),
+	       rectype([agenda=[rectype([e:pick_up(R.h, R.s)])]:list(rectype(_))]))).
 update_function(
-	R, fun(_, [agenda=[[e:pick_up(R.h, R.s)]]:list(rec_type)],
-	       fun(_, [e:pick_up(R.h, R.s)],
-		   [agenda=[[e:attract_attention(R.h, R.d)]]:list(rec_type)]))).
+	R, fun(_, rectype([agenda=[rectype([e:pick_up(R.h, R.s)])]:list(rectype(_))]),
+	       fun(_, rectype([e:pick_up(R.h, R.s)]),
+		   rectype([agenda=[rectype([e:attract_attention(R.h, R.d)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, [agenda=[[e:attract_attention(R.h, R.d)]]:list(rec_type)],
-	       fun(_, [e:attract_attention(R.h, R.d)],
-		   [agenda=[[e:throw(R.h, R.s)]]:list(rec_type)]))).
+	R, fun(_, rectype([agenda=[rectype([e:attract_attention(R.h, R.d)])]:list(rectype(_))]),
+	       fun(_, rectype([e:attract_attention(R.h, R.d)]),
+		   rectype([agenda=[rectype([e:throw(R.h, R.s)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, [agenda=[[e:throw(R.h, R.s)]]:list(rec_type)],
-	       fun(_, [e:throw(R.h, R.s)],
-		   [agenda=[[e:run_after(R.d, R.s)]]:list(rec_type)]))).
+	R, fun(_, rectype([agenda=[rectype([e:throw(R.h, R.s)])]:list(rectype(_))]),
+	       fun(_, rectype([e:throw(R.h, R.s)]),
+		   rectype([agenda=[rectype([e:run_after(R.d, R.s)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, [agenda=[[e:run_after(R.d, R.s)]]:list(rec_type)],
-	       fun(_, [e:run_after(R.d, R.s)],
-		   [agenda=[[e:pick_up(R.d, R.s)]]:list(rec_type)]))).
+	R, fun(_, rectype([agenda=[rectype([e:run_after(R.d, R.s)])]:list(rectype(_))]),
+	       fun(_, rectype([e:run_after(R.d, R.s)]),
+		   rectype([agenda=[rectype([e:pick_up(R.d, R.s)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, [agenda=[[e:pick_up(R.d, R.s)]]:list(rec_type)],
-	       fun(_, [e:pick_up(R.d, R.s)],
-		   [agenda=[[e:return(R.d, R.s, R.h)]]:list(rec_type)]))).
+	R, fun(_, rectype([agenda=[rectype([e:pick_up(R.d, R.s)])]:list(rectype(_))]),
+	       fun(_, rectype([e:pick_up(R.d, R.s)]),
+		   rectype([agenda=[rectype([e:return(R.d, R.s, R.h)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, [agenda=[[e:return(R.d, R.s, R.h)]]:list(rec_type)],
-	       fun(_, [e:return(R.d, R.s, R.h)],
-		   [agenda=[]:list(rec_type)]))).
+	R, fun(_, rectype([agenda=[rectype([e:return(R.d, R.s, R.h)])]:list(rectype(_))]),
+	       fun(_, rectype([e:return(R.d, R.s, R.h)]),
+		   rectype([agenda=[]:list(rectype(_))])))).
 
 
 roles(_{h: h1,
@@ -49,7 +49,7 @@ action_rule(
 	Agent,
 	( \+ current_perceived_object(Agent, _),
 	  state(Agent, [T|_]),
-	  T = [agenda=[Fst|_]:list(rec_type)]
+	  T = rectype([agenda=[Fst|_]:list(rectype(_))])
 	),
 	assert(pending_action(Agent, create(Fst)))
     ).
@@ -75,7 +75,7 @@ action_rule(
 	Agent,
 	( state(Agent, [T_prev|_]),
 	  fun(_, T_prev, T),
-	  T = [_|_]
+	  T = rectype(_)
 	),
 	( retract(state(Agent, [T_prev|T_tail])),
 	  assert(state(Agent, [T, T_prev|T_tail]))
@@ -153,7 +153,7 @@ initialize_functions :-
 	   assert(fun(Var, VarType, Body))).
 
 
-initial_state_type([agenda=[]:list(rec_type)]).
+initial_state_type(rectype([agenda=[]:list(rectype(_))])).
 
 
 main :-
@@ -165,13 +165,17 @@ main :-
 
 
 process_time_steps(T, MaxT) :-
-    forall(agent(Agent),
-	   ( print_agent_header(Agent),
-	     ( T = 0 -> print_agent_internals(Agent) ; true ),
-	     update_state(Agent),
-	     forall(retract(pending_action(Agent, Action)),
-		    handle_action(Action))
-	   )),
+    forall(agent(Agent), process_time_step(T, Agent)),
+    potentially_process_next_time_steps(T, MaxT).
+
+process_time_step(T, Agent) :-
+    print_agent_header(Agent),
+    ( T = 0 -> print_agent_internals(Agent) ; true ),
+    update_state(Agent),
+    forall(retract(pending_action(Agent, Action)),
+	   handle_action(Action)).
+
+potentially_process_next_time_steps(T, MaxT) :-
     write('----------------------------------------------------------------------'), nl, nl,
     ( T < MaxT ->
 	  T1 is T + 1,
