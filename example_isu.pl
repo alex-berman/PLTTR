@@ -48,8 +48,7 @@ action_rule(
 	eventCreation,
 	Agent,
 	( \+ current_perceived_object(Agent, _),
-	  state(Agent, [T|_]),
-	  T = rectype([agenda=[Fst|_]:list(rectype(_))])
+	  state(Agent, [rectype([agenda=[Fst|_]:list(rectype(_))])|_])
 	),
 	assert(pending_action(Agent, create(Fst)))
     ).
