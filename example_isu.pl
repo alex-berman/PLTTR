@@ -112,15 +112,25 @@ agent(h).
 agent(d).
 
 
-handle_action(create(Type)) :-
-    create_event_in_world(Type).
+handle_action(Agent, create(Type)) :-
+    % For a creation act to succeed (i.e. for an object to actually be created in the world), the agent's role in
+    % the game needs to match the agent in the event (first PType argument).
+    roles(R),
+    R.Agent = Participant,
+    ( participant_matches_event_agent(Participant, Type) ->
+	  create_object_in_world(Type) ;
+      true ).
 
 
-create_event_in_world(Type) :-
-    % We assume that any event can be created at any time, regardless of the state of the world. We also assume that
-    % when a event is created in the world, all agents immediately perceive it.
-    create(Type, Event),
-    forall(agent(Agent), perceive(Agent, Event)).
+participant_matches_event_agent(Participant, rectype([e:E])) :-
+    E =.. [_Pred,Participant|_OtherArgs].
+
+
+create_object_in_world(Type) :-
+    % We assume that when an object is created in the world, all agents immediately perceive it.
+    create(Type, Object),
+    write('  created object of type '), write(Type), nl,
+    forall(agent(Agent), perceive(Agent, Object)).
 
 
 
@@ -172,7 +182,7 @@ process_time_step(T, Agent) :-
     ( T = 0 -> print_agent_internals(Agent) ; true ),
     update_state(Agent),
     forall(retract(pending_action(Agent, Action)),
-	   handle_action(Action)).
+	   handle_action(Agent, Action)).
 
 potentially_process_next_time_steps(T, MaxT) :-
     write('----------------------------------------------------------------------'), nl, nl,
