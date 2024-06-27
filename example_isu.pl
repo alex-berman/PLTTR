@@ -6,31 +6,31 @@
 
 % R is a dict containing role assignments for h (human), d (dog), and s (stick).
 update_function(
-	R, fun(_, rectype([agenda=[]:list(rectype(_))]),
+	R, fun(_:rectype([agenda=[]:list(rectype(_))]),
 	       rectype([agenda=[rectype([e:pick_up(R.h, R.s)])]:list(rectype(_))]))).
 update_function(
-	R, fun(_, rectype([agenda=[rectype([e:pick_up(R.h, R.s)])]:list(rectype(_))]),
-	       fun(_, rectype([e:pick_up(R.h, R.s)]),
+	R, fun(_:rectype([agenda=[rectype([e:pick_up(R.h, R.s)])]:list(rectype(_))]),
+	       fun(_:rectype([e:pick_up(R.h, R.s)]),
 		   rectype([agenda=[rectype([e:attract_attention(R.h, R.d)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, rectype([agenda=[rectype([e:attract_attention(R.h, R.d)])]:list(rectype(_))]),
-	       fun(_, rectype([e:attract_attention(R.h, R.d)]),
+	R, fun(_:rectype([agenda=[rectype([e:attract_attention(R.h, R.d)])]:list(rectype(_))]),
+	       fun(_:rectype([e:attract_attention(R.h, R.d)]),
 		   rectype([agenda=[rectype([e:throw(R.h, R.s)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, rectype([agenda=[rectype([e:throw(R.h, R.s)])]:list(rectype(_))]),
-	       fun(_, rectype([e:throw(R.h, R.s)]),
+	R, fun(_:rectype([agenda=[rectype([e:throw(R.h, R.s)])]:list(rectype(_))]),
+	       fun(_:rectype([e:throw(R.h, R.s)]),
 		   rectype([agenda=[rectype([e:run_after(R.d, R.s)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, rectype([agenda=[rectype([e:run_after(R.d, R.s)])]:list(rectype(_))]),
-	       fun(_, rectype([e:run_after(R.d, R.s)]),
+	R, fun(_:rectype([agenda=[rectype([e:run_after(R.d, R.s)])]:list(rectype(_))]),
+	       fun(_:rectype([e:run_after(R.d, R.s)]),
 		   rectype([agenda=[rectype([e:pick_up(R.d, R.s)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, rectype([agenda=[rectype([e:pick_up(R.d, R.s)])]:list(rectype(_))]),
-	       fun(_, rectype([e:pick_up(R.d, R.s)]),
+	R, fun(_:rectype([agenda=[rectype([e:pick_up(R.d, R.s)])]:list(rectype(_))]),
+	       fun(_:rectype([e:pick_up(R.d, R.s)]),
 		   rectype([agenda=[rectype([e:return(R.d, R.s, R.h)])]:list(rectype(_))])))).
 update_function(
-	R, fun(_, rectype([agenda=[rectype([e:return(R.d, R.s, R.h)])]:list(rectype(_))]),
-	       fun(_, rectype([e:return(R.d, R.s, R.h)]),
+	R, fun(_:rectype([agenda=[rectype([e:return(R.d, R.s, R.h)])]:list(rectype(_))]),
+	       fun(_:rectype([e:return(R.d, R.s, R.h)]),
 		   rectype([agenda=[]:list(rectype(_))])))).
 
 
@@ -60,7 +60,7 @@ action_rule(
 	Agent,
 	( state(Agent, [T_prev|_]),
 	  has_type(S_prev, T_prev),
-	  fun(S_prev, T_prev, fun(Event, EventType, T)),
+	  fun(S_prev:T_prev, fun(Event:EventType, T)),
 	  current_perceived_object(Agent, Event),
 	  has_type(Event, EventType)
 	),
@@ -74,7 +74,7 @@ action_rule(
 	tacitUpdate,
 	Agent,
 	( state(Agent, [T_prev|_]),
-	  fun(_, T_prev, T),
+	  fun(_:T_prev, T),
 	  T = rectype(_)
 	),
 	( retract(state(Agent, [T_prev|T_tail])),
@@ -140,7 +140,7 @@ print_agent_internals(Agent) :-
 
 
 clear_dynamic_facts :-
-    retractall(fun(_, _, _)),
+    retractall(fun(_, _)),
     retractall(current_perceived_object(_, _)),
     retractall(state(_, _)),
     retractall(pending_perception(_, _)),
@@ -149,8 +149,8 @@ clear_dynamic_facts :-
 
 initialize_functions :-
     roles(R),
-    forall(update_function(R, fun(Var, VarType, Body)),
-	   assert(fun(Var, VarType, Body))).
+    forall(update_function(R, fun(Var:VarType, Body)),
+	   assert(fun(Var:VarType, Body))).
 
 
 initial_state_type(rectype([agenda=[]:list(rectype(_))])).
