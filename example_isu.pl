@@ -75,7 +75,7 @@ action_rule(
 	Agent,
 	( state(Agent, [T_prev|_]),
 	  fun(_, T_prev, T),
-	  T \= fun(_, _, _)
+	  T = [_|_]
 	),
 	( retract(state(Agent, [T_prev|T_tail])),
 	  assert(state(Agent, [T, T_prev|T_tail]))
